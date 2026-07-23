@@ -26,3 +26,7 @@ def test_ui(test):
 
 def test_foundation(test):
     assert test('foundation.py') == b'OK'
+
+
+def test_bip322(test):
+    assert test('bip322.py') == b'OK'
