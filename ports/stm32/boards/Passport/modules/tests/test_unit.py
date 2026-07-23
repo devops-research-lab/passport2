@@ -26,3 +26,7 @@ def test_ui(test):
 
 def test_foundation(test):
     assert test('foundation.py') == b'OK'
+
+
+def test_restore_backup(test):
+    assert test('restore_backup.py') == b'OK'
