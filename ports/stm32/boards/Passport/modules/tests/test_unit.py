@@ -20,6 +20,10 @@ def test_ext_settings(test):
     assert test('ext_settings.py') == b'OK'
 
 
+def test_settings(test):
+    assert test('settings.py') == b'OK'
+
+
 def test_ui(test):
     assert test('ui.py') == b'OK'
 
