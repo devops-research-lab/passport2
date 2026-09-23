@@ -1,81 +1,75 @@
-# SPDX-FileCopyrightText: © 2024 Foundation Devices, Inc. <hello@foundationdevices.com>
-# SPDX-License-Identifier: GPL-3.0-or-later
-
 name: Lint
-on: [push, pull_request]
+on:
+  push: null
 jobs:
   is-reuse-compliant:
     name: Is REUSE compliant?
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: fsfe/reuse-action@v2
-
-  rust-code-compiles:
-    name: Rust code compiles?
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/rust-toolchain
-        with:
-          toolchain: 1.70.0
-          targets: thumbv7em-none-eabihf
-      - run: |
-          cargo check --manifest-path extmod/foundation-rust/Cargo.toml
-      # Required by secp256k1-sys.
-      - run: sudo apt-get install -y gcc-arm-none-eabi
-      - run: |
-          cargo check --manifest-path extmod/foundation-rust/Cargo.toml \
-                      --target thumbv7em-none-eabihf
-
-  is-the-rust-code-formatted:
-    name: Is the Rust code formatted?
-    needs: [rust-code-compiles]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/rust-toolchain
-        with:
-          toolchain: 1.70.0
-          components: rustfmt
-      - run: |
-          cargo fmt --manifest-path extmod/foundation-rust/Cargo.toml \
-                    --all -- --check
-
+    - uses: actions/checkout@v4
+    - uses: fsfe/reuse-action@v2
   is-the-python-code-formatted:
     name: Is the Python code formatted?
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: sudo apt-get install -y pycodestyle
-      - run: pycodestyle --statistics --exclude translations ports/stm32/boards/Passport
-
-  is-foundation-header-up-to-date:
-    name: Is foundation.h header file up to date?
-    needs: [rust-code-compiles]
+    - uses: actions/checkout@v4
+    - run: sudo apt-get install -y pycodestyle
+    - run: pycodestyle --statistics --exclude translations ports/stm32/boards/Passport
+  rust-code-compiles:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/rust-toolchain
-        with:
-          toolchain: 1.70.0
-      - run: cargo install cbindgen@^0.24 --locked
-      - run: |
-          cbindgen --config extmod/foundation-rust/cbindgen.toml \
-                   --output extmod/foundation-rust/include/foundation.h \
-                   --verify \
-                   extmod/foundation-rust/
+    - name: stepify-probe-rust-code-compiles
+      run: echo stepify-probe-rust-code-compiles
+    - uses: actions/checkout@v4
+    - uses: ./.github/actions/rust-toolchain
+      with:
+        toolchain: 1.70.0
+        targets: thumbv7em-none-eabihf
+    - run: 'cargo check --manifest-path extmod/foundation-rust/Cargo.toml
 
-  rust-tests-pass:
-    name: Rust tests pass?
-    needs: [rust-code-compiles]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/rust-toolchain
-        with:
-          toolchain: 1.70.0
-          targets: 
-      - run: |
-          cargo test --manifest-path extmod/foundation-rust/Cargo.toml \
-                     --features std
+        '
+    - run: sudo apt-get install -y gcc-arm-none-eabi
+    - run: "cargo check --manifest-path extmod/foundation-rust/Cargo.toml \\\n            --target thumbv7em-none-eabihf\n"
+    - name: stepify-tail-rust-code-compiles
+      run: echo stepify-tail-rust-code-compiles
+      id: _bre_rust_code_compiles
+    - name: stepify-probe-is-the-rust-code-formatted
+      run: echo stepify-probe-is-the-rust-code-formatted
+    - uses: ./.github/actions/rust-toolchain
+      with:
+        toolchain: 1.70.0
+        components: rustfmt
+    - run: "cargo fmt --manifest-path extmod/foundation-rust/Cargo.toml \\\n          --all -- --check\n"
+    - name: stepify-tail-is-the-rust-code-formatted
+      run: echo stepify-tail-is-the-rust-code-formatted
+    - name: stepify-probe-is-foundation-header-up-to-date
+      run: echo stepify-probe-is-foundation-header-up-to-date
+      if: '!cancelled() && steps._bre_rust_code_compiles.conclusion == ''success'''
+    - name: stepify-fault-is-foundation-header-up-to-date
+      run: exit 1
+      if: '!cancelled() && steps._bre_rust_code_compiles.conclusion == ''success'''
+    - uses: ./.github/actions/rust-toolchain
+      with:
+        toolchain: 1.70.0
+      if: '!cancelled() && steps._bre_rust_code_compiles.conclusion == ''success'''
+    - run: cargo install cbindgen@^0.24 --locked
+      if: '!cancelled() && steps._bre_rust_code_compiles.conclusion == ''success'''
+    - run: "cbindgen --config extmod/foundation-rust/cbindgen.toml \\\n         --output extmod/foundation-rust/include/foundation.h\
+        \ \\\n         --verify \\\n         extmod/foundation-rust/\n"
+      if: '!cancelled() && steps._bre_rust_code_compiles.conclusion == ''success'''
+    - name: stepify-tail-is-foundation-header-up-to-date
+      run: echo stepify-tail-is-foundation-header-up-to-date
+      if: '!cancelled() && steps._bre_rust_code_compiles.conclusion == ''success'''
+    - name: stepify-probe-rust-tests-pass
+      run: echo stepify-probe-rust-tests-pass
+      if: '!cancelled() && steps._bre_rust_code_compiles.conclusion == ''success'''
+    - uses: ./.github/actions/rust-toolchain
+      with:
+        toolchain: 1.70.0
+        targets: null
+      if: '!cancelled() && steps._bre_rust_code_compiles.conclusion == ''success'''
+    - run: "cargo test --manifest-path extmod/foundation-rust/Cargo.toml \\\n           --features std\n"
+      if: '!cancelled() && steps._bre_rust_code_compiles.conclusion == ''success'''
+    - name: stepify-tail-rust-tests-pass
+      run: echo stepify-tail-rust-tests-pass
+      if: '!cancelled() && steps._bre_rust_code_compiles.conclusion == ''success'''
